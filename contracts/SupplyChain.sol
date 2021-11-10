@@ -4,26 +4,46 @@ pragma solidity >=0.5.16 <0.9.0;
 contract SupplyChain {
 
   // <owner>
+  address public owner;
 
   // <skuCount>
+  uint public skuCount;
 
   // <items mapping>
+  mapping(uint => Item) items;
 
   // <enum State: ForSale, Sold, Shipped, Received>
+  enum State {
+    ForSale,
+    Sold,
+    Shipped,
+    Received
+  }
 
   // <struct Item: name, sku, price, state, seller, and buyer>
-  
+  struct Item {
+    string name;
+    uint sku;
+    uint price;
+    State state;
+    address payable seller;
+    address payable buyer;
+  }
   /* 
    * Events
    */
 
   // <LogForSale event: sku arg>
+  event LogForSale(uint _sku);
 
   // <LogSold event: sku arg>
+  event LogSold(uint _sku);
 
   // <LogShipped event: sku arg>
+  event LogShipped(uint _sku);
 
   // <LogReceived event: sku arg>
+  event LogReceived(uint _sku);
 
 
   /* 
@@ -33,23 +53,27 @@ contract SupplyChain {
   // Create a modifer, `isOwner` that checks if the msg.sender is the owner of the contract
 
   // <modifier: isOwner
+  modifier isOwner () {
+    require(msg.sender == owner, "msg.sender is not the owner");
+    _;
+  }
 
   modifier verifyCaller (address _address) { 
-    // require (msg.sender == _address); 
+    require (msg.sender == _address); 
     _;
   }
 
   modifier paidEnough(uint _price) { 
-    // require(msg.value >= _price); 
+    require(msg.value >= _price); 
     _;
   }
 
   modifier checkValue(uint _sku) {
     //refund them after pay for item (why it is before, _ checks for logic before func)
     _;
-    // uint _price = items[_sku].price;
-    // uint amountToRefund = msg.value - _price;
-    // items[_sku].buyer.transfer(amountToRefund);
+    uint _price = items[_sku].price;
+    uint amountToRefund = msg.value - _price;
+    items[_sku].buyer.transfer(amountToRefund);
   }
 
   // For each of the following modifiers, use what you learned about modifiers
@@ -72,23 +96,24 @@ contract SupplyChain {
 
   function addItem(string memory _name, uint _price) public returns (bool) {
     // 1. Create a new item and put in array
+
     // 2. Increment the skuCount by one
     // 3. Emit the appropriate event
     // 4. return true
 
     // hint:
-    // items[skuCount] = Item({
-    //  name: _name, 
-    //  sku: skuCount, 
-    //  price: _price, 
-    //  state: State.ForSale, 
-    //  seller: msg.sender, 
-    //  buyer: address(0)
-    //});
-    //
-    //skuCount = skuCount + 1;
-    // emit LogForSale(skuCount);
-    // return true;
+    items[skuCount] = Item({
+     name: _name, 
+     sku: skuCount, 
+     price: _price, 
+     state: State.ForSale, 
+     seller: payable(msg.sender), 
+     buyer: payable(address(0))
+    });
+    
+    skuCount = skuCount + 1;
+    emit LogForSale(skuCount);
+    return true;
   }
 
   // Implement this buyItem function. 
